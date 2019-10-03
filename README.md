@@ -128,7 +128,7 @@ The diagram belows shows the avenues of communication between the different acto
 <img src="https://i.imgur.com/iMWCwfP.png" alt="actor messages">
 </p>
 
-###Message sequences
+### Message sequences
 In designing the message sequences, it's helpful to take a look at a few use cases of the elevator system, in order to detail the messages that should get sent between the different actors. For example, let's say a passenger takes an elevator ride from floor 1 to floor 2. That might consist of the following steps:
 
 1. Passenger sends a `RequestUpLift(1)` message to the Dispatcher
@@ -162,7 +162,7 @@ Let's also take a look at a request for an elevator at floor 1 while the nearest
 Here we see that the lift 'moves' between floors by receiving messages from the Engine.
 The Engine actor is responsible for timing the elevation changes upon request to move up and down, and only it can send messages that the lift will use to change floors.
 
-###State-dependent Behavior
+### State-dependent Behavior
 
 We've seen how the actors communicate via messages, but how do they keep track of all their requests?
 How do they know whether they're in the correct state to even respond to requests?
@@ -206,7 +206,7 @@ In addition to the Lift class, the Passenger actor also mixes in the `FSM` trait
 Take a look at the source code for each individual actor for more information on how they respond to messages.
 For more clarity on how the actors respond to individual messages in situations of varying complexity, look for unit tests in the `test` directory.
 
-###Interacting with elevators using Play
+### Interacting with elevators using Play
 The elevator system is controlled by a single application controller that generates `Action` values.
 HTTP requests that are received by the Play application are routed to this controller.
 The controller can be found in `controllers/Application.scala`, and it keeps track of one `Dispatcher` to control the elevator system, and a map of passengers that can interact with the elevator system.
