@@ -1,4 +1,4 @@
-# play-elevators
+# play-elevators [![Build Status](https://travis-ci.com/andy327/play-elevators.svg?branch=master)](https://travis-ci.com/andy327/play-elevators)
 
 ## Table of contents
 * [Overview](#overview)
