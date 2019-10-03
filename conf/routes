@@ -1,0 +1,8 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+GET     /add_passenger              controllers.Application.addPassenger(name: String)
+GET     /move                       controllers.Application.movePassenger(name: String, floor: Int)
+GET     /location                   controllers.Application.location(name: String)
+GET     /status                     controllers.Application.status
