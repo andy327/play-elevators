@@ -9,7 +9,7 @@ object Lift {
   case object MovingUp extends State
   case object MovingDown extends State
 
-  type RequestMap = Map[ServiceRequest, Set[ActorRef]]
+  type RequestMap = Map[ServiceRequest, Set[ActorRef]] // map of requests to the set of actors waiting on them
   object Data { def unapply(data: Data) = Option(data.currentFloor, data.passengers) }
   sealed trait Data {
     def currentFloor: Int
@@ -194,7 +194,7 @@ class Lift(
 
   onTransition {
     case _ -> nextState =>
-      gossip(Status(nextState, nextStateData))
+      gossip(Status(nextState, nextStateData)) // keep the passengers/dispatcher informed of this lift's status
   }
 
   whenUnhandled {

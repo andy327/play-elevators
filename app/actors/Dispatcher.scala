@@ -37,7 +37,11 @@ class Dispatcher(
       context.actorOf(Props(new Lift(id, millisDoorOpen, millisPerFloor, maxFloor, capacity)), s"Lift$id") ->
       Status(Idle, IdleData.initial)
     ).toMap
+
+  /** map of requesters to their requests that have been delegated to a lift */
   var servedRequests: MMap[ActorRef, RequestLift] = MMap.empty
+
+  /** map of requesters to their requests that are awaiting handling by a lift */
   var pendingRequests: MMap[ActorRef, RequestLift] = MMap.empty
 
   override def preStart() = {
@@ -46,7 +50,7 @@ class Dispatcher(
 
   /** Returns an Option containing a reference to the nearest available lift, if one exists. */
   def bestLiftForRequest(request: RequestLift): Option[ActorRef] = {
-    val validLiftsAndFloors = request match {
+    val validLiftsAndDistances = request match {
       case RequestUpLift(floor) =>
         lifts.map { case (lift, Status(state, data)) => (lift, data.currentFloor, state) }.collect {
           case (lift, liftFloor, Idle) => (lift, math.abs(floor - liftFloor))
@@ -59,7 +63,7 @@ class Dispatcher(
         }
     }
     // take the closest lift that can service the request, if it exists
-    validLiftsAndFloors.minByOption(_._2).map(_._1)
+    validLiftsAndDistances.minByOption(_._2).map(_._1)
   }
 
   def receive = {
@@ -77,9 +81,9 @@ class Dispatcher(
 
     case RequestServed(servedRequest: RequestLift) =>
       log info(s"completed request $servedRequest")
-      val (served, remaining) = servedRequests.partition { case (_, request) => request == servedRequest }
+      val (completed, remaining) = servedRequests.partition { case (_, request) => request == servedRequest }
       servedRequests = remaining
-      served foreach { case (requester, request) =>
+      completed foreach { case (requester, request) =>
         log info(s"${sender.path.name} is ready for ${requester.path.name}")
         requester ! LiftReady(sender)
       }
