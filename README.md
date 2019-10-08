@@ -1,5 +1,6 @@
 # play-elevators [![Build Status](https://travis-ci.com/andy327/play-elevators.svg?branch=master)](https://travis-ci.com/andy327/play-elevators)
 
+
 ## Table of contents
 * [Overview](#overview)
 * [Technologies](#technologies)
@@ -47,7 +48,7 @@ $ http localhost:9000/add_passenger?name=bob
 $ http localhost:9000/move?"name=bob&floor=15"
 ```
 
-You can check on the location of your passengers, or the status of the dispatch system itself using the `location` and `status` commands.
+You can check on the location of your passengers or the status of the dispatch system itself using the `location` and `status` commands.
 
 ```
 $ http localhost:9000/location?name=bob
@@ -87,21 +88,23 @@ dispatcher {
 
 If you want to change the behavior of your elevator system, edit this file and restart the server, and the new elevator system will use these settings.
 Create a lightning fast elevator system that launches passengers to their destinations at 20 milliseconds per floor, or set it to one slow elevator and send a subway train's worth of passengers to the hundredth floor while watching the server slowly serve each and every request.
-Or go ahead and simulate the tedium of daily life by configuring the system to mirror your office building's speed and try taking a busy elevator system to your own floor. _Exciting!_
+Or go ahead and simulate the tedium of daily life by configuring the system to mirror your office building's speed and try taking a busy elevator system to your own floor.
+_Exciting!_
 
 
 ## History
 Elevators weren't always so complex.
-Before the 1950's when electrical switches took over, an elevator was operated by a lift attendant standing inside.
-The attendant would command the elevator to respond to calls by pulling a level to control the lift's movement.
-When automatic elevators first came into use, some of the simpler systems would shuttle up and down the entirety of the building at scheduled intervals.
-It was wasteful and slow; elevators would stop at floors where no one was waiting, and make pointless round-trips during off-peak hours <sup>[[1]](https://www.popularmechanics.com/technology/infrastructure/a20986/the-hidden-science-of-elevators/)</sup>.
+Before the 1950s when electrical switches took over, an elevator was operated by a lift attendant standing inside.
+The attendant would command the elevator to respond to calls by pulling a lever to control the lift's movement.
+When automatic elevators first came into use, some of the simpler systems would shuttle passengers up and down the entirety of the building at scheduled intervals.
+It was wasteful and slow; elevators would stop at floors where no one was waiting, and make pointless round-trips during off-peak hours.<sup>[[1]](https://www.popularmechanics.com/technology/infrastructure/a20986/the-hidden-science-of-elevators/)</sup>
 
 By the 1960s, elevators began operating more similarly to the ones we see today, guided by the *elevator algorithm*.
 It can be stated simply with the following two rules:
 
 1. As long as there’s someone inside or ahead of the elevator who wants to go in the current direction, keep heading in that direction.
-2. Once the elevator has exhausted the requests in its current direction, switch directions if there’s a request in the other direction. Otherwise, stop and wait for a call.
+2. Once the elevator has exhausted the requests in its current direction, switch directions if there’s a request in the other direction.
+Otherwise, stop and wait for a call.
 
 (Incidentally, the elevator algorithm has also found an application in determining the motion of a hard disk's arm and head in servicing read and write requests!)
 The algorithm is simple enough, and in most cases will resolve requests efficiently.
@@ -118,7 +121,8 @@ Akka emphasizes actor-based concurrency, where actors send and respond to messag
 Messages are processed one at a time by an actor, and all the actors work concurrently with each other.
 There are four actor classes in this project, defined in the `actors` package:
 
-1. The `Dispatcher` actor is the primary point of communications for Passengers making requests. It has a series of child actors that represent the individual Lifts.
+1. The `Dispatcher` actor is the primary point of communications for Passengers making requests.
+It has a series of child actors that represent the individual Lifts.
 2. The `Lift` actor represents one elevator car and is forwarded requests from the Dispatcher, in addition to handling requests from Passengers inside.
 3. The `Engine` actor controls the movement of a Lift, and is responsible for notifying Lifts when they have moved to a new floor.
 4. The `Passenger` actor represents a person who interacts with the Dispatcher, as well as the individual Lift once they have entered inside of one.
@@ -131,7 +135,9 @@ The diagram belows shows the avenues of communication between the different acto
 
 
 ### Message sequences
-In designing the message sequences, it's helpful to take a look at a few use cases of the elevator system, in order to detail the messages that should get sent between the different actors. For example, let's say a passenger takes an elevator ride from floor 1 to floor 2. That might consist of the following steps:
+In designing the message sequences, it's helpful to take a look at a few use cases of the elevator system, in order to detail the messages that should get sent between the different actors.
+For example, let's say a passenger takes an elevator ride from floor 1 to floor 2.
+That might consist of the following steps:
 
 1. Passenger sends a `RequestUpLift(1)` message to the Dispatcher
 2. Dispatcher sends a `LiftReady` message to the Passenger
@@ -145,14 +151,15 @@ In step 1, the dispatcher receives a message stating that someone is on the firs
 This corresponds to a person pressing the 'up' button at the lobby.
 The dispatcher then has to decide which lift would best serve this request.
 In between steps 1 and 2, the dispatcher is communicating with the best choice of lift and telling it to process the request by heading down to the first floor.
-Once the lift has arrived at the first floor (or perhaps is already there), the lift sends a `RequestServed` message to the dispatcher containing the original request to inform it that the request has been handled.
+Once the lift has arrived at the first floor (or perhaps it's already there), the lift sends a `RequestServed` message to the dispatcher containing the original request to inform it that the request has been handled.
 In step 2, the dispatcher sends the passenger a `LiftReady` message containing a reference to the lift, so that it may further communicate commands to the lift directly.
 
 Steps 3 through 7 include a series of communications between the lift and the passenger.
 First the passenger will send a `GetOn` message to the lift to attempt to board.
-The lift will then need to verify that there is room for the passenger before allowing them to board by sending either a `PassengerAccepted` or `PassengerRejected` message.
+The lift will then need to verify that there is room for the passenger before allowing them to board, sending either a `PassengerAccepted` or `PassengerRejected` message.
 In the case of the latter, the passenger has to re-attempt making a request with the dispatcher, similar to how in real life a person will let a full elevator car go on ahead, and request an elevator again once the elevator doors have closed.
-If the passenger is accepted, they can proceed to send requests for specific floors to the lift, and await a `RequestServed` message back once they have arrived at their destination, and the passenger is then removed from the lift upon receipt of a `GetOff` message.
+If the passenger is accepted, they can proceed to send requests for specific floors to the lift, and await a `RequestServed` message back once they have arrived at their destination.
+The passenger is then removed from the lift upon receipt of a `GetOff` message.
 
 Let's also take a look at a request for an elevator at floor 1 while the nearest lift is at floor 2, this time from the perspective of the lift:
 
@@ -168,7 +175,7 @@ The Engine actor is responsible for timing the elevation changes upon request to
 ### State-dependent Behavior
 We've seen how the actors communicate via messages, but how do they keep track of all their requests?
 How do they know whether they're in the correct state to even respond to requests?
-After all, a lift sitting idly on the ground floor should be able to respond to any requests, whether it comes from an elevator request on another floor (the dispatcher) or a person standing inside it who wishes to go to another floor.
+After all, a lift sitting idly on the ground floor should be able to respond to any request, whether it comes from an elevator request on another floor (the dispatcher) or a person standing inside it who wishes to go to another floor.
 But a lift that's currently climbing its way up to the tenth floor while serving eight requests from other passengers (or perhaps one mischievous person who likes mashing buttons) might not be able to respond to such a request.
 The behavior of a lift is dependent on its current action, or state, so the Lift actor mixes in the `akka.actor.FSM` trait, which gives the Lift class the ability to function as a finite state machine.
 
@@ -200,7 +207,7 @@ The Lift class keeps track of its current floor, the references to passengers ri
 Arriving at a new floor causes the lift to examine its data to determine if any requests can be served, and whether it should continue with the direction of travel, reverse course, or go into an idle state.
 
 Additionally, there is a `whenUnhandled { ... }` block for messages that are not dependent on state.
-For example, when a `GetOn` message is received and the elevator is at capacity, it should always reject a passenger.
+For example, when a `GetOn` message is received and the elevator is at capacity, it should always reject the passenger.
 Also worth noting is that the Lift class issues `gossip` calls to listeners upon transition to a new state; the dispatcher and any passenger on board can receive notice of the lift moving to a new floor and update its own behavior and/or internal state accordingly.
 
 In addition to the Lift class, the Passenger actor also mixes in the `FSM` trait, and responds to different responses depending on whether it is idle, waiting for a lift, or traveling between floors.
@@ -213,7 +220,7 @@ For more clarity on how the actors respond to individual messages in situations 
 The elevator system is controlled by a single application controller that generates `Action` values.
 HTTP requests that are received by the Play application are routed to this controller.
 The controller can be found in `controllers/Application.scala`, and it keeps track of one `Dispatcher` to control the elevator system, and a map of passengers that can interact with the elevator system.
-The abstractions of lifts and engines are hidden away from the end user.
+The abstraction of engines is hidden away from the end user.
 
 The application routes that are supported are detailed in the `conf/routes` file:
 
@@ -226,7 +233,7 @@ GET     /status                     controllers.Application.status
 
 There are four available routes that are converted into actions: adding a passenger, moving the passenger to a specific floor, querying for a passenger's current location, and requesting the status of all the lifts.
 
-Adding and moving a passenger result in simple 200-level response for success, or a 400 response for bad requests.
+Adding and moving a passenger result in simple 200-level responses for success, or a 400 response for bad requests.
 The location and status endpoints are for requesting information about the dispatcher or passengers, and these return a JSON response.
 The `JSONMapping` object is responsible for defining macros to automatically map objects that we receive from the actor messages into JSON objects.
 If you're a particularly web-savvy developer, these responses should be all you need to design a front-end for a user to to interact with the dispatcher system directly and to visualize the results.
@@ -235,4 +242,5 @@ Enjoy!
 
 
 ## License
-(c) 2019 Andres Perez. This project is licensed under the [MIT License](https://opensource.org/licenses/MIT)
+(c) 2019 Andres Perez.
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT)
